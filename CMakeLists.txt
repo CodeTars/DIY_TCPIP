@@ -16,11 +16,13 @@ add_definitions(-D_CRT_SECURE_NO_WARNINGS -g)
 include_directories(
         ${PROJECT_SOURCE_DIR}
         ${PROJECT_SOURCE_DIR}/npcap/Include          # pcap路径
-        ${PROJECT_SOURCE_DIR}/include
+        ${PROJECT_SOURCE_DIR}/plat
+        ${PROJECT_SOURCE_DIR}/src/app
+        ${PROJECT_SOURCE_DIR}/src/net
 )
 
 # 搜索src下面的所有源文件，生成文件列表
-file(GLOB_RECURSE SOURCE_LIST "src/*.c" "src/*.h" "test/*.c")
+file(GLOB_RECURSE SOURCE_LIST "plat/*.c" "src/*.c" "test/*.c")
 add_executable(${PROJECT_NAME} ${SOURCE_LIST})
 add_definitions(-DNET_DRIVER_PCAP)    # use pcap
 

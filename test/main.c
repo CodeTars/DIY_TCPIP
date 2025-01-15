@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "sys_plat.h"
-#include "src/app/echo/tcp_echo_client.h"
-#include "src/app/echo/tcp_echo_server.h"
+#include "echo/tcp_echo_client.h"
+#include "echo/tcp_echo_server.h"
 
 static sys_sem_t sem;
 static int count = 0;
@@ -67,9 +67,9 @@ int main(void)
     // sys_thread_create(thread2_entry, "BBBB");
 
     // tcp_echo_client_start(friend0_ip, 5000);
-    tcp_echo_server_start(6000);
+    // tcp_echo_server_start(6000);
 
-    while (1) {}
+    while (1) { sys_sleep(100); }
     pcap_t *pcap = pcap_device_open(netdev0_phy_ip, netdev0_hwaddr);
     if (pcap)
     {
