@@ -18,7 +18,7 @@ include_directories(
         ${PROJECT_SOURCE_DIR}/npcap/Include          # pcap路径
         ${PROJECT_SOURCE_DIR}/plat
         ${PROJECT_SOURCE_DIR}/src/app
-        ${PROJECT_SOURCE_DIR}/src/net
+        ${PROJECT_SOURCE_DIR}/src/net/net
 )
 
 # 搜索src下面的所有源文件，生成文件列表

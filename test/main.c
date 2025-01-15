@@ -2,6 +2,7 @@
 #include "sys_plat.h"
 #include "echo/tcp_echo_client.h"
 #include "echo/tcp_echo_server.h"
+#include "net.h"
 
 static sys_sem_t sem;
 static int count = 0;
@@ -59,52 +60,21 @@ void thread2_entry(void *arg)
 
 int main(void)
 {
-    sem = sys_sem_create(0);
-    read_sem = sys_sem_create(0);
-    write_sem = sys_sem_create(sizeof(buffer));
-    // mutex = sys_mutex_create();
-    // sys_thread_create(thread1_entry, "AAAA");
-    // sys_thread_create(thread2_entry, "BBBB");
+    // sem = sys_sem_create(0);
+    // read_sem = sys_sem_create(0);
+    // write_sem = sys_sem_create(sizeof(buffer));
+    // // mutex = sys_mutex_create();
+    // // sys_thread_create(thread1_entry, "AAAA");
+    // // sys_thread_create(thread2_entry, "BBBB");
 
-    // tcp_echo_client_start(friend0_ip, 5000);
-    // tcp_echo_server_start(6000);
+    // // tcp_echo_client_start(friend0_ip, 5000);
+    // // tcp_echo_server_start(6000);
+
+    net_init();
+
+    net_start();
 
     while (1) { sys_sleep(100); }
-    pcap_t *pcap = pcap_device_open(netdev0_phy_ip, netdev0_hwaddr);
-    if (pcap)
-    {
-        for (int counter = 0;;)
-        {
-            printf("begin test: %d\n", counter++);
-            uint8_t buffer[1024] = {"hello world!"};
-            // for (int i = 0; i < sizeof buffer; i++)
-            // {
-            //     buffer[i] = i;
-            // }
-            struct pcap_pkthdr *pkthdr;
-            const uint8_t *pkt_data;
-            if (pcap_next_ex(pcap, &pkthdr, &pkt_data) != 1)
-            {
-                continue;
-            }
-
-            int len = pkthdr->len > sizeof buffer ? sizeof buffer : pkthdr->len;
-            memcpy(buffer, pkt_data, len);
-
-            buffer[0] = 'h';
-            buffer[1] = 'i';
-
-            if (pcap_inject(pcap, buffer, sizeof buffer) == -1)
-            {
-                printf("pcap send: send packet failed %s \n", pcap_geterr(pcap));
-                break;
-            }
-        }
-    }
-    else
-    {
-        //
-    }
 
     return 0;
 }
