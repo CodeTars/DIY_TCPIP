@@ -4,6 +4,7 @@
 #include "echo/tcp_echo_server.h"
 #include "net.h"
 #include "netif_pcap.h"
+#include "dbg.h"
 
 static sys_sem_t sem;
 static int count = 0;
@@ -69,6 +70,7 @@ net_err_t netdev_init()
     return NET_ERR_OK;
 }
 
+#define DBG_TEST DBG_LEVEL_INFO
 int main(void)
 {
     // sem = sys_sem_create(0);
@@ -80,6 +82,10 @@ int main(void)
 
     // // tcp_echo_client_start(friend0_ip, 5000);
     // // tcp_echo_server_start(6000);
+
+    dbg_info(DBG_TEST, "info");
+    dbg_warning(DBG_TEST, "warning");
+    dbg_error(DBG_TEST, "error");
 
     net_init();
 
