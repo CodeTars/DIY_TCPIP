@@ -86,6 +86,8 @@ int main(void)
     dbg_info(DBG_TEST, "info");
     dbg_warning(DBG_TEST, "warning");
     dbg_error(DBG_TEST, "error");
+    dbg_assert(1 + 1 == 2, "failed");
+    dbg_assert(1 + 1 == 3, "failed");
 
     net_init();
 
