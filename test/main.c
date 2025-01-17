@@ -79,20 +79,59 @@ typedef struct _tnode_t
 
 void nlist_test()
 {
-    const int NODE_CNT = 8;
+#define NODE_CNT 4
 
-    tnode_t node[8];
+    tnode_t node[NODE_CNT];
     nlist_t list;
+    nlist_node_t *p;
 
     nlist_init(&list);
+
+    plat_printf("insert first\n");
     for (int i = 0; i < NODE_CNT; i++)
     {
         node[i].id = i;
         nlist_insert_first(&list, &node[i].node);
     }
+    nlist_for_each(p, &list)
+    {
+        tnode_t *tnode = nlist_entry(p, tnode_t, node);
+        printf("id = %d\n", tnode->id);
+    }
 
-    plat_printf("insert first\n");
-    nlist_node_t *p;
+    plat_printf("remove first\n");
+    for (int i = 0; i < NODE_CNT; i++)
+    {
+        nlist_node_t *p = nlist_remove_first(&list);
+        tnode_t *tnode = nlist_entry(p, tnode_t, node);
+        printf("id = %d\n", tnode->id);
+    }
+
+    plat_printf("insert last\n");
+    for (int i = 0; i < NODE_CNT; i++)
+    {
+        node[i].id = i;
+        nlist_insert_last(&list, &node[i].node);
+    }
+    nlist_for_each(p, &list)
+    {
+        tnode_t *tnode = nlist_entry(p, tnode_t, node);
+        printf("id = %d\n", tnode->id);
+    }
+
+    plat_printf("remove last\n");
+    for (int i = 0; i < NODE_CNT; i++)
+    {
+        nlist_node_t *p = nlist_remove_last(&list);
+        tnode_t *tnode = nlist_entry(p, tnode_t, node);
+        printf("id = %d\n", tnode->id);
+    }
+
+    plat_printf("insert after\n");
+    for (int i = 0; i < NODE_CNT; i++)
+    {
+        nlist_insert_after(&list, nlist_first(&list), &node[i].node);   
+    }
     nlist_for_each(p, &list)
     {
         tnode_t *tnode = nlist_entry(p, tnode_t, node);
@@ -131,11 +170,6 @@ int main(void)
     // net_start();
 
     basic_test();
-
-    while (1)
-    {
-        sys_sleep(100);
-    }
 
     return 0;
 }
