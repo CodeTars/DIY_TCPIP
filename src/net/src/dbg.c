@@ -6,7 +6,7 @@ void dbg_print(int module, int s_level, const char *file, const char *func, int 
 {
     if (module >= s_level)
     {
-        char *title[] = {
+        static const char *title[] = {
             [DBG_LEVEL_ERROR] = DBG_STYLE_ERROR "error",
             [DBG_LEVEL_WARNING] = DBG_STYLE_WARNING "warning",
             [DBG_LEVEL_INFO] = "info",

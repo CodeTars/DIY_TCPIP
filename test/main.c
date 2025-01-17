@@ -5,6 +5,7 @@
 #include "net.h"
 #include "netif_pcap.h"
 #include "dbg.h"
+#include "nlist.h"
 
 static sys_sem_t sem;
 static int count = 0;
@@ -70,7 +71,40 @@ net_err_t netdev_init()
     return NET_ERR_OK;
 }
 
-#define DBG_TEST DBG_LEVEL_INFO
+typedef struct _tnode_t
+{
+    int id;
+    nlist_node_t node;
+} tnode_t;
+
+void nlist_test()
+{
+    const int NODE_CNT = 8;
+
+    tnode_t node[8];
+    nlist_t list;
+
+    nlist_init(&list);
+    for (int i = 0; i < NODE_CNT; i++)
+    {
+        node[i].id = i;
+        nlist_insert_first(&list, &node[i].node);
+    }
+
+    plat_printf("insert first\n");
+    nlist_node_t *p;
+    nlist_for_each(p, &list)
+    {
+        tnode_t *tnode = nlist_entry(p, tnode_t, node);
+        printf("id = %d\n", tnode->id);
+    }
+}
+
+void basic_test()
+{
+    nlist_test();
+}
+
 int main(void)
 {
     // sem = sys_sem_create(0);
@@ -83,17 +117,20 @@ int main(void)
     // // tcp_echo_client_start(friend0_ip, 5000);
     // // tcp_echo_server_start(6000);
 
-    dbg_info(DBG_TEST, "info");
-    dbg_warning(DBG_TEST, "warning");
-    dbg_error(DBG_TEST, "error");
-    dbg_assert(1 + 1 == 2, "failed");
-    dbg_assert(1 + 1 == 3, "failed");
+#define DBG_TEST DBG_LEVEL_INFO
+    // dbg_info(DBG_TEST, "info");
+    // dbg_warning(DBG_TEST, "warning");
+    // dbg_error(DBG_TEST, "error");
+    // dbg_assert(1 + 1 == 2, "failed");
+    // dbg_assert(1 + 1 == 3, "failed");
 
-    net_init();
+    // net_init();
 
-    netdev_init();
+    // netdev_init();
 
-    net_start();
+    // net_start();
+
+    basic_test();
 
     while (1)
     {
