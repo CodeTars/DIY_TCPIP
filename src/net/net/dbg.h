@@ -1,5 +1,6 @@
 #ifndef DBG_H
 #define DBG_H
+#include "net_cfg.h"
 
 void dbg_print(int module, int s_level, const char *file, const char *func, int line, const char *fmt, ...);
 

@@ -4,7 +4,7 @@
 #include "sys_plat.h"
 #include "net_err.h"
 
-typdef enum _nlocker_type_t {
+typedef enum _nlocker_type_t {
     NLOCKER_THREAD,
     NLOCKER_NONE,
 } nlocker_type_t;

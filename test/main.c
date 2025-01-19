@@ -6,6 +6,7 @@
 #include "netif_pcap.h"
 #include "dbg.h"
 #include "nlist.h"
+#include "mblock.h"
 
 static sys_sem_t sem;
 static int count = 0;
@@ -130,7 +131,7 @@ void nlist_test()
     plat_printf("insert after\n");
     for (int i = 0; i < NODE_CNT; i++)
     {
-        nlist_insert_after(&list, nlist_first(&list), &node[i].node);   
+        nlist_insert_after(&list, nlist_first(&list), &node[i].node);
     }
     nlist_for_each(p, &list)
     {
@@ -139,9 +140,32 @@ void nlist_test()
     }
 }
 
+void mblock_test()
+{
+    uint8_t buffer[10 * 100];
+    mblock_t mblock;
+    mblock_init(&mblock, buffer, 10, 100, NLOCKER_THREAD);
+
+    void *temp[10];
+    for (int i = 0; i < 10; i++)
+    {
+        temp[i] = mblock_alloc(&mblock, 0);
+        printf("block: %p, free count: %d\n", temp[i], mblock_free_cnt(&mblock));
+    }
+
+    for (int i = 0; i < 10; i++)
+    {
+        mblock_free(&mblock, temp[i]);
+        printf("free count: %d\n", mblock_free_cnt(&mblock));
+    }
+
+    mblock_destroy(&mblock);
+}
+
 void basic_test()
 {
     nlist_test();
+    mblock_test();
 }
 
 int main(void)
