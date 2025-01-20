@@ -1,6 +1,7 @@
 #if defined(NET_DRIVER_PCAP)
 #include "netif_pcap.h"
 #include "net_plat.h"
+#include "exmsg.h"
 
 void recv_thread(void *arg)
 {
@@ -8,7 +9,8 @@ void recv_thread(void *arg)
 
     while (1)
     {
-        sys_sleep(100);
+        sys_sleep(1);
+        exmsg_netif_in();
     }
 }
 
@@ -18,7 +20,7 @@ void xmit_thread(void *arg)
 
     while (1)
     {
-        sys_sleep(100);
+        sys_sleep(1);
     }
 }
 

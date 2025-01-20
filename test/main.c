@@ -22,13 +22,13 @@ void thread1_entry(void *arg)
 {
     for (int i = 0; i < 2 * sizeof(buffer); i++)
     {
-        buffer[write_index++] = i;
-        sys_sem_notify(read_sem);
         sys_sem_wait(write_sem, 0);
+        buffer[write_index++] = i;
         if (write_index == sizeof(buffer))
         {
             write_index = 0;
         }
+        sys_sem_notify(read_sem);
         printf("thread 1 write data: %d\n", i);
     }
 
@@ -51,11 +51,11 @@ void thread2_entry(void *arg)
         sys_sem_wait(read_sem, 0);
 
         uint8_t data = buffer[read_index++];
-        sys_sem_notify(write_sem);
         if (read_index == sizeof(buffer))
         {
             read_index = 0;
         }
+        sys_sem_notify(write_sem);
         printf("thread 2 read data: %d\n", data);
         sys_sleep(200);
     }
@@ -180,20 +180,20 @@ int main(void)
     // // tcp_echo_client_start(friend0_ip, 5000);
     // // tcp_echo_server_start(6000);
 
-#define DBG_TEST DBG_LEVEL_INFO
+// #define DBG_TEST DBG_LEVEL_INFO
     // dbg_info(DBG_TEST, "info");
     // dbg_warning(DBG_TEST, "warning");
     // dbg_error(DBG_TEST, "error");
     // dbg_assert(1 + 1 == 2, "failed");
     // dbg_assert(1 + 1 == 3, "failed");
 
-    // net_init();
+    net_init();
 
-    // netdev_init();
+    // basic_test();
 
-    // net_start();
+    netdev_init();
 
-    basic_test();
+    net_start();
 
     return 0;
 }
