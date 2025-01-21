@@ -2,10 +2,8 @@
 #include "dbg.h"
 #include "sys_plat.h"
 
-void dbg_print(int module, int s_level, const char *file, const char *func, int line, const char *fmt, ...)
-{
-    if (module >= s_level)
-    {
+void dbg_print(int module, int s_level, const char *file, const char *func, int line, const char *fmt, ...) {
+    if (module >= s_level) {
         static const char *title[] = {
             [DBG_LEVEL_ERROR] = DBG_STYLE_ERROR "error",
             [DBG_LEVEL_WARNING] = DBG_STYLE_WARNING "warning",
@@ -13,8 +11,7 @@ void dbg_print(int module, int s_level, const char *file, const char *func, int 
             [DBG_LEVEL_NONE] = "none",
         };
         char *end = file + strlen(file) - 1;
-        while (*end != '/' && *end != '\\')
-        {
+        while (*end != '/' && *end != '\\') {
             --end;
         }
         ++end;

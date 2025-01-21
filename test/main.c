@@ -18,22 +18,18 @@ static sys_sem_t read_sem, write_sem;
 /**
  * 线程1
  */
-void thread1_entry(void *arg)
-{
-    for (int i = 0; i < 2 * sizeof(buffer); i++)
-    {
+void thread1_entry(void *arg) {
+    for (int i = 0; i < 2 * sizeof(buffer); i++) {
         sys_sem_wait(write_sem, 0);
         buffer[write_index++] = i;
-        if (write_index == sizeof(buffer))
-        {
+        if (write_index == sizeof(buffer)) {
             write_index = 0;
         }
         sys_sem_notify(read_sem);
         printf("thread 1 write data: %d\n", i);
     }
 
-    while (1)
-    {
+    while (1) {
         plat_printf("this is thread 1: %s\n", (char *)arg);
         sys_sleep(1000);
         sys_sem_notify(sem);
@@ -44,42 +40,35 @@ void thread1_entry(void *arg)
 /**
  * 线程2
  */
-void thread2_entry(void *arg)
-{
-    for (int i = 0; i < 2 * sizeof(buffer); i++)
-    {
+void thread2_entry(void *arg) {
+    for (int i = 0; i < 2 * sizeof(buffer); i++) {
         sys_sem_wait(read_sem, 0);
 
         uint8_t data = buffer[read_index++];
-        if (read_index == sizeof(buffer))
-        {
+        if (read_index == sizeof(buffer)) {
             read_index = 0;
         }
         sys_sem_notify(write_sem);
         printf("thread 2 read data: %d\n", data);
         sys_sleep(200);
     }
-    while (1)
-    {
+    while (1) {
         sys_sem_wait(sem, 0);
         plat_printf("this is thread 2: %s\n", (char *)arg);
     }
 }
 
-net_err_t netdev_init()
-{
+net_err_t netdev_init() {
     netif_pcap_open();
     return NET_ERR_OK;
 }
 
-typedef struct _tnode_t
-{
+typedef struct _tnode_t {
     int id;
     nlist_node_t node;
 } tnode_t;
 
-void nlist_test()
-{
+void nlist_test() {
 #define NODE_CNT 4
 
     tnode_t node[NODE_CNT];
@@ -89,72 +78,61 @@ void nlist_test()
     nlist_init(&list);
 
     plat_printf("insert first\n");
-    for (int i = 0; i < NODE_CNT; i++)
-    {
+    for (int i = 0; i < NODE_CNT; i++) {
         node[i].id = i;
         nlist_insert_first(&list, &node[i].node);
     }
-    nlist_for_each(p, &list)
-    {
+    nlist_for_each(p, &list) {
         tnode_t *tnode = nlist_entry(p, tnode_t, node);
         printf("id = %d\n", tnode->id);
     }
 
     plat_printf("remove first\n");
-    for (int i = 0; i < NODE_CNT; i++)
-    {
+    for (int i = 0; i < NODE_CNT; i++) {
         nlist_node_t *p = nlist_remove_first(&list);
         tnode_t *tnode = nlist_entry(p, tnode_t, node);
         printf("id = %d\n", tnode->id);
     }
 
     plat_printf("insert last\n");
-    for (int i = 0; i < NODE_CNT; i++)
-    {
+    for (int i = 0; i < NODE_CNT; i++) {
         node[i].id = i;
         nlist_insert_last(&list, &node[i].node);
     }
-    nlist_for_each(p, &list)
-    {
+    nlist_for_each(p, &list) {
         tnode_t *tnode = nlist_entry(p, tnode_t, node);
         printf("id = %d\n", tnode->id);
     }
 
     plat_printf("remove last\n");
-    for (int i = 0; i < NODE_CNT; i++)
-    {
+    for (int i = 0; i < NODE_CNT; i++) {
         nlist_node_t *p = nlist_remove_last(&list);
         tnode_t *tnode = nlist_entry(p, tnode_t, node);
         printf("id = %d\n", tnode->id);
     }
 
     plat_printf("insert after\n");
-    for (int i = 0; i < NODE_CNT; i++)
-    {
+    for (int i = 0; i < NODE_CNT; i++) {
         nlist_insert_after(&list, nlist_first(&list), &node[i].node);
     }
-    nlist_for_each(p, &list)
-    {
+    nlist_for_each(p, &list) {
         tnode_t *tnode = nlist_entry(p, tnode_t, node);
         printf("id = %d\n", tnode->id);
     }
 }
 
-void mblock_test()
-{
+void mblock_test() {
     uint8_t buffer[10 * 100];
     mblock_t mblock;
     mblock_init(&mblock, buffer, 10, 100, NLOCKER_THREAD);
 
     void *temp[10];
-    for (int i = 0; i < 10; i++)
-    {
+    for (int i = 0; i < 10; i++) {
         temp[i] = mblock_alloc(&mblock, 0);
         printf("block: %p, free count: %d\n", temp[i], mblock_free_cnt(&mblock));
     }
 
-    for (int i = 0; i < 10; i++)
-    {
+    for (int i = 0; i < 10; i++) {
         mblock_free(&mblock, temp[i]);
         printf("free count: %d\n", mblock_free_cnt(&mblock));
     }
@@ -162,14 +140,12 @@ void mblock_test()
     mblock_destroy(&mblock);
 }
 
-void basic_test()
-{
+void basic_test() {
     nlist_test();
     mblock_test();
 }
 
-int main(void)
-{
+int main(void) {
     // sem = sys_sem_create(0);
     // read_sem = sys_sem_create(0);
     // write_sem = sys_sem_create(sizeof(buffer));
@@ -180,7 +156,7 @@ int main(void)
     // // tcp_echo_client_start(friend0_ip, 5000);
     // // tcp_echo_server_start(6000);
 
-// #define DBG_TEST DBG_LEVEL_INFO
+    // #define DBG_TEST DBG_LEVEL_INFO
     // dbg_info(DBG_TEST, "info");
     // dbg_warning(DBG_TEST, "warning");
     // dbg_error(DBG_TEST, "error");
@@ -195,7 +171,7 @@ int main(void)
 
     net_start();
 
-    while(1) {
+    while (1) {
         sys_sleep(100);
     }
 

@@ -1,22 +1,17 @@
 #include "nlist.h"
 
-void nlist_init(nlist_t *list)
-{
+void nlist_init(nlist_t *list) {
     list->first = list->last = (nlist_node_t *)0;
     list->count = 0;
 }
 
-void nlist_insert_first(nlist_t *list, nlist_node_t *node)
-{
+void nlist_insert_first(nlist_t *list, nlist_node_t *node) {
     nlist_node_init(node);
-    if (!nlist_is_empty(list))
-    {
+    if (!nlist_is_empty(list)) {
         list->first->pre = node;
         node->next = list->first;
         list->first = node;
-    }
-    else
-    {
+    } else {
         list->first = list->last = node;
     }
     list->count++;
@@ -34,23 +29,16 @@ void nlist_insert_last(nlist_t *list, nlist_node_t *node) {
     list->count++;
 }
 
-nlist_node_t *nlist_remove(nlist_t *list, nlist_node_t *node)
-{
-    if (node->pre)
-    {
+nlist_node_t *nlist_remove(nlist_t *list, nlist_node_t *node) {
+    if (node->pre) {
         node->pre->next = node->next;
-    }
-    else
-    { // node is the first node
+    } else { // node is the first node
         list->first = node->next;
     }
 
-    if (node->next)
-    {
+    if (node->next) {
         node->next->pre = node->pre;
-    }
-    else
-    { // node is the last node
+    } else { // node is the last node
         list->last = node->pre;
     }
 
@@ -59,8 +47,7 @@ nlist_node_t *nlist_remove(nlist_t *list, nlist_node_t *node)
     return node;
 }
 
-void nlist_insert_after(nlist_t *list, nlist_node_t *node, nlist_node_t *new_node)
-{
+void nlist_insert_after(nlist_t *list, nlist_node_t *node, nlist_node_t *new_node) {
     if (nlist_is_empty(list) || !node) {
         nlist_insert_first(list, new_node);
         return;

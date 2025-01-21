@@ -4,9 +4,9 @@
  * @brief 不同操作系统平台的接口
  * @version 0.110
  * @date 2022-12-19
- * 
+ *
  * @copyright Copyright (c) 2022
- * 
+ *
  */
 #include "sys_plat.h"
 
@@ -19,14 +19,14 @@
 #include "cpu/irq.h"
 #include "core/task.h"
 
-#define NET_TASK_NR                 3           // 如果收发均有线程，至少3个。否则1个
-#define NET_SEM_NR                  100         // 信号量数量
-#define NET_MUTEX_NR                100         // 互斥锁数量
+#define NET_TASK_NR 3    // 如果收发均有线程，至少3个。否则1个
+#define NET_SEM_NR 100   // 信号量数量
+#define NET_MUTEX_NR 100 // 互斥锁数量
 
 typedef struct _net_task_t {
     task_t task;
-    uint32_t stack[10*1024];
-}net_task_t;
+    uint32_t stack[10 * 1024];
+} net_task_t;
 
 static net_task_t task_tbl[NET_TASK_NR];
 static mblock_t task_mblock;
@@ -35,27 +35,27 @@ static mblock_t sem_mblock;
 static mutex_t mutex_tbl[NET_MUTEX_NR];
 static mblock_t mutex_mblock;
 
-void sys_time_curr (net_time_t * time) {
+void sys_time_curr(net_time_t *time) {
     *time = sys_get_ticks();
 }
 
-int sys_time_goes (net_time_t * pre) {
+int sys_time_goes(net_time_t *pre) {
     // 获取当前时间
     net_time_t curr = sys_get_ticks();
 
     // 记录过去了多少毫秒
-   int diff_ms = (curr - *pre) * OS_TICK_MS;
+    int diff_ms = (curr - *pre) * OS_TICK_MS;
 
     // 记录下这次调用的时间
-    *pre  = curr;
-    return diff_ms;    
+    *pre = curr;
+    return diff_ms;
 }
 
 // 计数信号量相关：由具体平台实现
 sys_sem_t sys_sem_create(int init_count) {
     sys_sem_t sem = (sys_sem_t)mblock_alloc(&sem_mblock, -1);
     if (sem != SYS_SEM_INVALID) {
-       sem_init(sem, init_count);
+        sem_init(sem, init_count);
     }
     return sem;
 }
@@ -102,8 +102,8 @@ void sys_intlocker_unlock(sys_intlocker_t locker) {
 }
 
 // 线程相关：由具体平台实现
-sys_thread_t sys_thread_create(sys_thread_func_t entry, void* arg) {
-    net_task_t * task = (net_task_t *)mblock_alloc(&task_mblock, -1);
+sys_thread_t sys_thread_create(sys_thread_func_t entry, void *arg) {
+    net_task_t *task = (net_task_t *)mblock_alloc(&task_mblock, -1);
 
     // 初始化系统线程
     int err = task_init(&task->task, "net task", TASK_FLAG_SYSTEM, (uint32_t)entry, (uint32_t)(task->stack + sizeof(task->stack)));
@@ -117,11 +117,11 @@ sys_thread_t sys_thread_create(sys_thread_func_t entry, void* arg) {
     return &task->task;
 }
 
-void sys_thread_exit (int error) {
+void sys_thread_exit(int error) {
     // 不实现，加入os内核后，应用层不需要使用该接口
 }
 
-sys_thread_t sys_thread_self (void) {
+sys_thread_t sys_thread_self(void) {
     return task_current();
 }
 
@@ -134,8 +134,8 @@ void sys_plat_init(void) {
     mblock_init(&sem_mblock, sem_tbl, sizeof(sem_t), NET_SEM_NR, NLOCKER_NONE);
     mblock_init(&mutex_mblock, mutex_tbl, sizeof(mutex_t), NET_MUTEX_NR, NLOCKER_NONE);
 }
-	
- // windows
+
+// windows
 #elif defined(SYS_PLAT_WINDOWS)
 
 #include <winsock.h>
@@ -143,7 +143,7 @@ void sys_plat_init(void) {
 #include <time.h>
 #include "pcap.h"
 
-#pragma comment(lib, "ws2_32.lib")  // 加载win32的网络库
+#pragma comment(lib, "ws2_32.lib") // 加载win32的网络库
 
 /**
  * 调整npcap的搜索路径：默认安装在系统的dll路径\npcap目录下
@@ -152,7 +152,7 @@ void sys_plat_init(void) {
  */
 int load_pcap_lib() {
     static int dll_loaded = 0;
-    _TCHAR  npcap_dir[512];
+    _TCHAR npcap_dir[512];
     int size;
 
     if (dll_loaded) {
@@ -178,25 +178,25 @@ int load_pcap_lib() {
 /**
  * @brief 获取当前时间
  */
-void sys_time_curr (net_time_t * time) {
+void sys_time_curr(net_time_t *time) {
     // https://learn.microsoft.com/zh-cn/windows/win32/api/sysinfoapi/nf-sysinfoapi-gettickcount?redirectedfrom=MSDN
-    *time = GetTickCount();     // 自系统启动以来已用过的毫秒数
+    *time = GetTickCount(); // 自系统启动以来已用过的毫秒数
 }
 
 /**
  * @brief 返回当前时间与传入的time之间时间差值, 调用完成之后，time被更新为当前时间
- * 
+ *
  * 第一次调用时，返回的时间差值无效
  */
-int sys_time_goes (net_time_t * pre) {
+int sys_time_goes(net_time_t *pre) {
     // 获取当前时间
     net_time_t curr = GetTickCount();
 
     // 记录过去了多少毫秒
-   int diff_ms = curr - *pre;
+    int diff_ms = curr - *pre;
 
     // 记录下这次调用的时间
-    *pre  = curr;
+    *pre = curr;
     return diff_ms;
 }
 
@@ -210,7 +210,7 @@ void sys_sem_free(sys_sem_t sem) {
 
 int sys_sem_wait(sys_sem_t sem, uint32_t tmo_ms) {
     DWORD tmo = (tmo_ms == 0) ? INFINITE : tmo_ms;
-    DWORD  err = WaitForSingleObject(sem, tmo);
+    DWORD err = WaitForSingleObject(sem, tmo);
     if (err == WAIT_OBJECT_0) {
         return 0;
     }
@@ -263,25 +263,25 @@ void sys_mutex_unlock(sys_mutex_t locker) {
     ReleaseMutex(locker);
 }
 
-sys_thread_t sys_thread_create(void (*entry)(void * arg), void* arg) {
+sys_thread_t sys_thread_create(void (*entry)(void *arg), void *arg) {
     return CreateThread(
-        NULL,                           // SD
-        0,                              // initial stack size
-        (LPTHREAD_START_ROUTINE)entry,  // thread function
-        arg,                            // thread argument
-        0,                              // 创建后立即运行
-        NULL                            // thread identifier
-        );
+        NULL,                          // SD
+        0,                             // initial stack size
+        (LPTHREAD_START_ROUTINE)entry, // thread function
+        arg,                           // thread argument
+        0,                             // 创建后立即运行
+        NULL                           // thread identifier
+    );
 }
 
 /**
  * @brief 结束线程，目前只能结束自己
  */
-void sys_thread_exit (int error) {
+void sys_thread_exit(int error) {
     ExitThread((DWORD)error);
 }
 
-sys_thread_t sys_thread_self (void) {
+sys_thread_t sys_thread_self(void) {
     return GetCurrentThread();
 }
 
@@ -316,16 +316,16 @@ int load_pcap_lib(void) {
 /**
  * @brief 获取当前时间
  */
-void sys_time_curr (net_time_t * time) {
+void sys_time_curr(net_time_t *time) {
     gettimeofday(time, NULL);
 }
 
 /**
  * @brief 返回当前时间与传入的time之间时间差值, 调用完成之后，time被更新为当前时间
- * 
+ *
  * 第一次调用时，返回的时间差值无效
  */
-int sys_time_goes (net_time_t * pre) {
+int sys_time_goes(net_time_t *pre) {
     // 获取当前时间
     struct timeval curr;
     gettimeofday(&curr, NULL);
@@ -334,7 +334,7 @@ int sys_time_goes (net_time_t * pre) {
     int diff_ms = (curr.tv_sec - pre->tv_sec) * 1000 + (curr.tv_usec - pre->tv_usec) / 1000;
 
     // 记录下这次调用的时间
-    *pre  = curr;
+    *pre = curr;
     return diff_ms;
 }
 
@@ -424,13 +424,13 @@ void sys_sem_notify(sys_sem_t sem) {
  * @param prio 优先级
  * @param stack_size 堆栈大小
  */
-sys_thread_t sys_thread_create(void (*entry)(void * arg), void* arg) {
+sys_thread_t sys_thread_create(void (*entry)(void *arg), void *arg) {
     pthread_t pthread;
 
     int err = pthread_create(&pthread,
-                         NULL,
-                         (void* (*)(void * arg))entry,
-                         arg);
+                             NULL,
+                             (void *(*)(void *arg))entry,
+                             arg);
     if (err) {
         return (pthread_t)0;
     }
@@ -491,12 +491,11 @@ void sys_mutex_unlock(sys_mutex_t locker) {
     pthread_mutex_unlock(locker);
 }
 
-
-void sys_thread_exit (int error) {
+void sys_thread_exit(int error) {
     // 不实现，加入os内核后，应用层不需要使用该接口
 }
 
-sys_thread_t sys_thread_self (void) {
+sys_thread_t sys_thread_self(void) {
     return pthread_self();
 }
 
@@ -511,14 +510,14 @@ void sys_plat_init(void) {
 /**
  * 根据ip地址查找本地网络接口列表，找到相应的名称
  */
-int pcap_find_device(const char* ip, char* name_buf) {
+int pcap_find_device(const char *ip, char *name_buf) {
     struct in_addr dest_ip;
 
     inet_pton(AF_INET, ip, &dest_ip);
 
     // 获取所有的接口列表
     char err_buf[PCAP_ERRBUF_SIZE];
-    pcap_if_t* pcap_if_list = NULL;
+    pcap_if_t *pcap_if_list = NULL;
     int err = pcap_findalldevs(&pcap_if_list, err_buf);
     if (err < 0) {
         pcap_freealldevs(pcap_if_list);
@@ -526,22 +525,22 @@ int pcap_find_device(const char* ip, char* name_buf) {
     }
 
     // 遍历列表
-    pcap_if_t* item;
+    pcap_if_t *item;
     for (item = pcap_if_list; item != NULL; item = item->next) {
         if (item->addresses == NULL) {
             continue;
         }
 
         // 查找地址
-        for (struct pcap_addr* pcap_addr = item->addresses; pcap_addr != NULL; pcap_addr = pcap_addr->next) {
+        for (struct pcap_addr *pcap_addr = item->addresses; pcap_addr != NULL; pcap_addr = pcap_addr->next) {
             // 检查ipv4地址类型
-            struct sockaddr* sock_addr = pcap_addr->addr;
+            struct sockaddr *sock_addr = pcap_addr->addr;
             if (sock_addr->sa_family != AF_INET) {
                 continue;
             }
 
             // 地址相同则返回
-            struct sockaddr_in* curr_addr = ((struct sockaddr_in*)sock_addr);
+            struct sockaddr_in *curr_addr = ((struct sockaddr_in *)sock_addr);
             if (curr_addr->sin_addr.s_addr == dest_ip.s_addr) {
                 strcpy(name_buf, item->name);
                 pcap_freealldevs(pcap_if_list);
@@ -559,7 +558,7 @@ int pcap_find_device(const char* ip, char* name_buf) {
  */
 int pcap_show_list(void) {
     char err_buf[PCAP_ERRBUF_SIZE];
-    pcap_if_t* pcapif_list = NULL;
+    pcap_if_t *pcapif_list = NULL;
     int count = 0;
 
     // 查找所有的网络接口
@@ -573,31 +572,30 @@ int pcap_show_list(void) {
     printf("net card list: \n");
 
     // 遍历所有的可用接口，输出其信息
-    for (pcap_if_t* item = pcapif_list; item != NULL; item = item->next) {
+    for (pcap_if_t *item = pcapif_list; item != NULL; item = item->next) {
         if (item->addresses == NULL) {
             continue;
         }
 
         // 显示ipv4地址
-        for (struct pcap_addr* pcap_addr = item->addresses; pcap_addr != NULL; pcap_addr = pcap_addr->next) {
+        for (struct pcap_addr *pcap_addr = item->addresses; pcap_addr != NULL; pcap_addr = pcap_addr->next) {
             char str[INET_ADDRSTRLEN];
-            struct sockaddr_in* ip_addr;
+            struct sockaddr_in *ip_addr;
 
-            struct sockaddr* sockaddr = pcap_addr->addr;
+            struct sockaddr *sockaddr = pcap_addr->addr;
             if (sockaddr->sa_family != AF_INET) {
                 continue;
             }
 
-            ip_addr = (struct sockaddr_in*)sockaddr;
-            char * name = item->description;
+            ip_addr = (struct sockaddr_in *)sockaddr;
+            char *name = item->description;
             if (name == NULL) {
                 name = item->name;
             }
             printf("%d: IP:%s name: %s, \n",
-                count++,
-                name ? name : "unknown",
-                inet_ntop(AF_INET, &ip_addr->sin_addr, str, sizeof(str))
-            );
+                   count++,
+                   name ? name : "unknown",
+                   inet_ntop(AF_INET, &ip_addr->sin_addr, str, sizeof(str)));
             break;
         }
     }
@@ -616,7 +614,7 @@ int pcap_show_list(void) {
 /**
  * 打开pcap设备接口
  */
-pcap_t * pcap_device_open(const char* ip, const uint8_t* mac_addr) {
+pcap_t *pcap_device_open(const char *ip, const uint8_t *mac_addr) {
     // 加载pcap库
     if (load_pcap_lib() < 0) {
         fprintf(stderr, "load pcap lib error。在windows上，请课程提供的安装npcap.dll\n");
@@ -628,7 +626,7 @@ pcap_t * pcap_device_open(const char* ip, const uint8_t* mac_addr) {
     if (pcap_find_device(ip, name_buf) < 0) {
         fprintf(stderr, "pcap find error: no net card has ip: %s. \n", ip);
         pcap_show_list();
-        return (pcap_t*)0;
+        return (pcap_t *)0;
     }
 
     // 根据名称获取ip地址、掩码等
@@ -642,62 +640,61 @@ pcap_t * pcap_device_open(const char* ip, const uint8_t* mac_addr) {
     }
 
     // 打开设备
-    pcap_t * pcap = pcap_create(name_buf, err_buf);
+    pcap_t *pcap = pcap_create(name_buf, err_buf);
     if (pcap == NULL) {
         fprintf(stderr, "pcap_create: create pcap failed %s\n net card name: %s\n", err_buf, name_buf);
         fprintf(stderr, "Use the following:\n");
         pcap_show_list();
-        return (pcap_t*)0;
+        return (pcap_t *)0;
     }
 
     if (pcap_set_snaplen(pcap, 65536) != 0) {
         fprintf(stderr, "pcap_open: set none block failed: %s\n", pcap_geterr(pcap));
-        return (pcap_t*)0;
+        return (pcap_t *)0;
     }
 
     if (pcap_set_promisc(pcap, 1) != 0) {
         fprintf(stderr, "pcap_open: set none block failed: %s\n", pcap_geterr(pcap));
-        return (pcap_t*)0;
+        return (pcap_t *)0;
     }
 
     if (pcap_set_timeout(pcap, 0) != 0) {
         fprintf(stderr, "pcap_open: set none block failed: %s\n", pcap_geterr(pcap));
-        return (pcap_t*)0;
+        return (pcap_t *)0;
     }
 
     // 非阻塞模式读取，程序中使用查询的方式读
     if (pcap_set_immediate_mode(pcap, 1) != 0) {
         fprintf(stderr, "pcap_open: set im block failed: %s\n", pcap_geterr(pcap));
-        return (pcap_t*)0;
+        return (pcap_t *)0;
     }
 
     if (pcap_activate(pcap) != 0) {
         fprintf(stderr, "pcap_open: active failed: %s\n", pcap_geterr(pcap));
-        return (pcap_t*)0;
+        return (pcap_t *)0;
     }
 
     if (pcap_setnonblock(pcap, 0, err_buf) != 0) {
         fprintf(stderr, "pcap_open: set none block failed: %s\n", pcap_geterr(pcap));
-        return (pcap_t*)0;
+        return (pcap_t *)0;
     }
 
     // 只捕获发往本接口与广播的数据帧。相当于只处理发往这张网卡的包
     char filter_exp[256];
     struct bpf_program fp;
     sprintf(filter_exp,
-        "(ether dst %02x:%02x:%02x:%02x:%02x:%02x or ether broadcast) and (not ether src %02x:%02x:%02x:%02x:%02x:%02x)",
-        mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5],
-        mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
+            "(ether dst %02x:%02x:%02x:%02x:%02x:%02x or ether broadcast) and (not ether src %02x:%02x:%02x:%02x:%02x:%02x)",
+            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5],
+            mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
     if (pcap_compile(pcap, &fp, filter_exp, 0, net) == -1) {
         printf("pcap_open: couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(pcap));
-        return (pcap_t*)0;
+        return (pcap_t *)0;
     }
     if (pcap_setfilter(pcap, &fp) == -1) {
         printf("pcap_open: couldn't install filter %s: %s\n", filter_exp, pcap_geterr(pcap));
-        return (pcap_t*)0;
+        return (pcap_t *)0;
     }
     return pcap;
 }
 
 #endif
-

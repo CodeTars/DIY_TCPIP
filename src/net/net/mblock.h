@@ -4,8 +4,7 @@
 #include "nlist.h"
 #include "nlocker.h"
 
-typedef struct _mblock_t
-{
+typedef struct _mblock_t {
     void *start;
     nlist_t free_list;
     nlocker_t locker;
