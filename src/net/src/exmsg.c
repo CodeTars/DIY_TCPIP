@@ -11,7 +11,7 @@ static mblock_t msg_block;            // 消息块管理器
 
 net_err_t exmsg_netif_in(void)
 {
-    exmsg_t *msg = mblock_alloc(&msg_block, -1);
+    exmsg_t *msg = mblock_alloc(&msg_block, 0);
     if (!msg)
     {
         dbg_warning(DBG_EXMSG, "no free buffer");
@@ -21,7 +21,7 @@ net_err_t exmsg_netif_in(void)
     static int id = 0;
     msg->id = ++id;
 
-    net_err_t err = fixq_send(&msg_queue, msg, -1);
+    net_err_t err = fixq_send(&msg_queue, msg, 0);
     if (err < 0)
     {
         dbg_warning(DBG_EXMSG, "queue full");
@@ -60,6 +60,7 @@ static void work_thread(void *arg)
 
     while (1)
     {
+        sys_sleep(100);
         exmsg_t *msg = (exmsg_t *)fixq_recv(&msg_queue, 0);
         if (!msg)
         {
@@ -67,7 +68,7 @@ static void work_thread(void *arg)
         }
         else
         {
-            printf("recv a msg (%p), type: %d, id: %d\n", msg->type, msg->id);
+            printf("recv a msg (%p), type: %d, id: %d\n", msg, msg->type, msg->id);
         }
         mblock_free(&msg_block, msg);
     }

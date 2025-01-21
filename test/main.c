@@ -189,11 +189,15 @@ int main(void)
 
     net_init();
 
-    // basic_test();
+    basic_test();
 
     netdev_init();
 
     net_start();
+
+    while(1) {
+        sys_sleep(100);
+    }
 
     return 0;
 }

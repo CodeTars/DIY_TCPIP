@@ -58,11 +58,11 @@ void mblock_free(mblock_t *mblock, void *block)
 {
     nlocker_lock(&mblock->locker);
     nlist_insert_first(&mblock->free_list, block);
+    nlocker_unlock(&mblock->locker);
     if (mblock->locker.type != NLOCKER_NONE)
     {
         sys_sem_notify(mblock->alloc_sem);
     }
-    nlocker_unlock(&mblock->locker);
 }
 
 void mblock_destroy(mblock_t *mblock)

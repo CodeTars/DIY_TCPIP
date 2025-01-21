@@ -9,7 +9,7 @@ void recv_thread(void *arg)
 
     while (1)
     {
-        sys_sleep(1);
+        // sys_sleep(100);
         exmsg_netif_in();
     }
 }
@@ -26,8 +26,8 @@ void xmit_thread(void *arg)
 
 net_err_t netif_pcap_open(void)
 {
-    sys_thread_create(recv_thread, (void *)0);
     sys_thread_create(xmit_thread, (void *)0);
+    sys_thread_create(recv_thread, (void *)0);
     return NET_ERR_OK;
 }
 
