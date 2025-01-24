@@ -7,6 +7,7 @@
 #include "dbg.h"
 #include "nlist.h"
 #include "mblock.h"
+#include "pktbuf.h"
 
 static sys_sem_t sem;
 static int count = 0;
@@ -95,9 +96,15 @@ void mblock_test() {
     mblock_destroy(&mblock);
 }
 
+void pktbuf_test() {
+    pktbuf_t *buf = pktbuf_alloc(2000);
+    pktbuf_free(buf);
+}
+
 void basic_test() {
     nlist_test();
     mblock_test();
+    pktbuf_test();
 }
 
 int main(void) {
