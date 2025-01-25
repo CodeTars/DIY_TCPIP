@@ -9,6 +9,51 @@ static pktblk_t block_buffer[PKTBUF_BLK_CNT];
 static mblock_t pktbuf_list;
 static pktbuf_t pktbuf_buffer[PKTBUF_BUF_CNT];
 
+static int cur_blk_tail_free(pktblk_t *blk) {
+    return (int)((blk->payload + PKTBUF_BLK_SIZE) - (blk->data + blk->size));
+}
+
+#if DBG_DISP_ENABLED(DBG_LEVEL_INFO)
+static void display_check_buf(pktbuf_t *buf) {
+    if (!buf) {
+        dbg_error(DBG_PKTBUF, "invalid buf. buf == 0");
+        return;
+    }
+
+    printf("check buf (%p), size: %d\n", buf, buf->total_size);
+    int total_size = 0, index = 0;
+    for (pktblk_t *blk = pktbuf_first_blk(buf); blk; blk = pktbuf_next_blk(blk)) {
+        printf("id: %d, ", index++);
+
+        if (blk->data < blk->payload || blk->data >= blk->payload + PKTBUF_BLK_SIZE) {
+            dbg_error(DBG_PKTBUF, "wrong block data address");
+        }
+
+        int pre_size = (int)(blk->data - blk->payload);
+        printf("pre: %d bytes, ", pre_size);
+
+        int used_size = blk->size;
+        printf("used: %d bytes, ", used_size);
+
+        int free_size = cur_blk_tail_free(blk);
+        printf("free: %d bytes\n", free_size);
+
+        int blk_total = pre_size + used_size + free_size;
+        if (blk_total != PKTBUF_BLK_SIZE) {
+            dbg_error(DBG_PKTBUF, "bad block size. %d != %d", blk_total, PKTBUF_BLK_SIZE);
+        }
+
+        total_size += used_size;
+    }
+
+    if (total_size != buf->total_size) {
+        dbg_error(DBG_PKTBUF, "wrong buf size. %d != %d", total_size, buf->total_size);
+    }
+}
+#else
+#define display_check_buf(buf)
+#endif
+
 net_err_t pktbuf_init(void) {
     dbg_info(DBG_PKTBUF, "init pktbuf list.");
     net_err_t err = nlocker_init(&locker, NLOCKER_THREAD);
@@ -54,7 +99,7 @@ static void pktblock_alloc_list(pktbuf_t *buf, int size, int add_front) {
             dbg_error(DBG_PKTBUF, "no buffer for alloc (size:%d)", size);
             return;
         }
-        block->size = size;
+        block->size = cur_size;
         if (add_front) {
             // 头插法
             block->data = block->payload + PKTBUF_BLK_SIZE - cur_size;
@@ -75,8 +120,10 @@ pktbuf_t *pktbuf_alloc(int size) {
         return (pktbuf_t *)0;
     }
     buf->total_size = size;
+    nlist_node_init(&buf->node);
 
-    pktblock_alloc_list(buf, size, 0);
+    pktblock_alloc_list(buf, size, 1);
+    display_check_buf(buf);
     return buf;
 }
 
