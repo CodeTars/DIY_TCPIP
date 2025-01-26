@@ -16,7 +16,7 @@ static int cur_blk_tail_free(pktblk_t *blk) {
 #if DBG_DISP_ENABLED(DBG_LEVEL_INFO)
 static void display_check_buf(pktbuf_t *buf) {
     if (!buf) {
-        dbg_error(DBG_PKTBUF, "invalid buf. buf == 0");
+        dbg_error(DBG_BUF, "invalid buf. buf == 0");
         return;
     }
 
@@ -26,7 +26,7 @@ static void display_check_buf(pktbuf_t *buf) {
         printf("id: %d, ", index++);
 
         if (blk->data < blk->payload || blk->data >= blk->payload + PKTBUF_BLK_SIZE) {
-            dbg_error(DBG_PKTBUF, "wrong block data address");
+            dbg_error(DBG_BUF, "wrong block data address");
         }
 
         int pre_size = (int)(blk->data - blk->payload);
@@ -40,14 +40,14 @@ static void display_check_buf(pktbuf_t *buf) {
 
         int blk_total = pre_size + used_size + free_size;
         if (blk_total != PKTBUF_BLK_SIZE) {
-            dbg_error(DBG_PKTBUF, "bad block size. %d != %d", blk_total, PKTBUF_BLK_SIZE);
+            dbg_error(DBG_BUF, "bad block size. %d != %d", blk_total, PKTBUF_BLK_SIZE);
         }
 
         total_size += used_size;
     }
 
     if (total_size != buf->total_size) {
-        dbg_error(DBG_PKTBUF, "wrong buf size. %d != %d", total_size, buf->total_size);
+        dbg_error(DBG_BUF, "wrong buf size. %d != %d", total_size, buf->total_size);
     }
 }
 #else
@@ -55,28 +55,28 @@ static void display_check_buf(pktbuf_t *buf) {
 #endif
 
 net_err_t pktbuf_init(void) {
-    dbg_info(DBG_PKTBUF, "init pktbuf list.");
+    dbg_info(DBG_BUF, "init pktbuf list.");
     net_err_t err = nlocker_init(&locker, NLOCKER_THREAD);
     if (err < 0) {
-        dbg_error(DBG_PKTBUF, "init locker error");
+        dbg_error(DBG_BUF, "init locker error");
         return err;
     }
 
     err = mblock_init(&block_list, block_buffer, PKTBUF_BLK_CNT, sizeof(pktblk_t), NLOCKER_THREAD);
     if (err < 0) {
-        dbg_error(DBG_PKTBUF, "init block_list error");
+        dbg_error(DBG_BUF, "init block_list error");
         nlocker_destroy(&locker);
         return err;
     }
 
     err = mblock_init(&pktbuf_list, pktbuf_buffer, PKTBUF_BUF_CNT, sizeof(pktbuf_t), NLOCKER_THREAD);
     if (err < 0) {
-        dbg_error(DBG_PKTBUF, "init pktbuf_list error");
+        dbg_error(DBG_BUF, "init pktbuf_list error");
         nlocker_destroy(&locker);
         return err;
     }
 
-    dbg_info(DBG_PKTBUF, "init done.");
+    dbg_info(DBG_BUF, "init done.");
     return NET_ERR_OK;
 }
 
@@ -90,17 +90,16 @@ static pktblk_t *pktblock_alloc(void) {
     return block;
 }
 
-static void pktblock_alloc_list(pktbuf_t *buf, int size, int add_front) {
-    nlist_init(&buf->blk_list);
+static net_err_t pktblock_alloc_list(pktbuf_t *buf, int size, int add_front) {
     while (size) {
         int cur_size = size > PKTBUF_BLK_SIZE ? PKTBUF_BLK_SIZE : size;
         pktblk_t *block = pktblock_alloc();
         if (!block) {
-            dbg_error(DBG_PKTBUF, "no buffer for alloc (size:%d)", size);
-            pktbuf_free(buf);
-            return;
+            dbg_error(DBG_BUF, "no buffer for alloc (size:%d)", size);
+            return NET_ERR_MEM;
         }
         block->size = cur_size;
+        buf->total_size += cur_size;
         if (add_front) {
             // 头插法
             block->data = block->payload + PKTBUF_BLK_SIZE - cur_size;
@@ -112,18 +111,25 @@ static void pktblock_alloc_list(pktbuf_t *buf, int size, int add_front) {
         }
         size -= cur_size;
     }
+    return NET_ERR_OK;
 }
 
 pktbuf_t *pktbuf_alloc(int size) {
     pktbuf_t *buf = mblock_alloc(&pktbuf_list, -1);
     if (!buf) {
-        dbg_error(DBG_PKTBUF, "no free pkt buffer");
+        dbg_error(DBG_BUF, "no free pkt buffer");
         return (pktbuf_t *)0;
     }
-    buf->total_size = size;
-    nlist_node_init(&buf->node);
 
-    pktblock_alloc_list(buf, size, 1);
+    nlist_node_init(&buf->node);
+    nlist_init(&buf->blk_list);
+    net_err_t err = pktblock_alloc_list(buf, size, 1);
+    if (err < 0) {
+        pktbuf_free(buf);
+        return (pktbuf_t *)0;
+    }
+
+    dbg_assert(buf->total_size == size, "wrong total size");
     display_check_buf(buf);
     return buf;
 }
@@ -135,4 +141,35 @@ void pktbuf_free(pktbuf_t *buf) {
         blk = next_blk;
     }
     mblock_free(&pktbuf_list, buf);
+}
+
+net_err_t pktbuf_add_header(pktbuf_t *buf, int size, int cont) {
+    pktblk_t *block = pktbuf_first_blk(buf);
+    int resv_size = (int)(block->data - block->payload);
+    if (size <= resv_size) {
+        block->size += size;
+        block->data -= size;
+        buf->total_size += size;
+        display_check_buf(buf);
+        return NET_ERR_OK;
+    }
+    if (cont) {
+        if (size > PKTBUF_BLK_SIZE) {
+            dbg_error(DBG_BUF, "add header continuously, too big size, %d > %d", size, PKTBUF_BLK_SIZE);
+            return NET_ERR_SIZE;
+        }
+    } else {
+        size -= resv_size;
+        block->size += resv_size;
+        block->data -= resv_size;
+        buf->total_size += resv_size;
+    }
+
+    net_err_t err = pktblock_alloc_list(buf, size, 1);
+    if (err < 0) {
+        dbg_error(DBG_BUF, "no free buffer (%d)", size);
+        return err;
+    }
+    display_check_buf(buf);
+    return NET_ERR_OK;
 }

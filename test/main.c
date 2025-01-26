@@ -98,6 +98,10 @@ void mblock_test() {
 
 void pktbuf_test() {
     pktbuf_t *buf = pktbuf_alloc(2000);
+    for (int i = 0; i < 10; i++) {
+        pktbuf_add_header(buf, 37, 1);
+    }
+    pktbuf_add_header(buf, 300, 0);
     pktbuf_free(buf);
 }
 
