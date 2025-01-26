@@ -23,6 +23,7 @@ net_err_t pktbuf_init(void);
 pktbuf_t *pktbuf_alloc(int size);
 void pktbuf_free(pktbuf_t *buf);
 net_err_t pktbuf_add_header(pktbuf_t *buf, int size, int cont);
+net_err_t pktbuf_remove_header(pktbuf_t *buf, int size);
 
 static inline pktblk_t *pktbuf_first_blk(pktbuf_t *buf) {
     nlist_node_t *first = nlist_first(&buf->blk_list);

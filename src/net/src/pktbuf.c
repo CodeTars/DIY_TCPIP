@@ -173,3 +173,28 @@ net_err_t pktbuf_add_header(pktbuf_t *buf, int size, int cont) {
     display_check_buf(buf);
     return NET_ERR_OK;
 }
+
+net_err_t pktbuf_remove_header(pktbuf_t *buf, int size) {
+    pktblk_t *block = pktbuf_first_blk(buf);
+    while (size) {
+        pktblk_t *next_block = pktbuf_next_blk(block);
+        if (size < block->size) {
+            block->data += size;
+            block->size -= size;
+            buf->total_size -= size;
+            break;
+        }
+
+        int cur_size = block->size;
+        size -= cur_size;
+        buf->total_size -= cur_size;
+
+        nlist_remove_first(&buf->blk_list);
+        mblock_free(&block_list, block);
+
+        block = next_block;
+    }
+
+    display_check_buf(buf);
+    return NET_ERR_OK;
+}
