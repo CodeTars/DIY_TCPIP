@@ -97,6 +97,7 @@ static void pktblock_alloc_list(pktbuf_t *buf, int size, int add_front) {
         pktblk_t *block = pktblock_alloc();
         if (!block) {
             dbg_error(DBG_PKTBUF, "no buffer for alloc (size:%d)", size);
+            pktbuf_free(buf);
             return;
         }
         block->size = cur_size;
@@ -128,5 +129,10 @@ pktbuf_t *pktbuf_alloc(int size) {
 }
 
 void pktbuf_free(pktbuf_t *buf) {
-    // todo
+    for (pktblk_t *blk = pktbuf_first_blk(buf); blk;) {
+        pktblk_t *next_blk = pktbuf_next_blk(blk);
+        mblock_free(&block_list, blk);
+        blk = next_blk;
+    }
+    mblock_free(&pktbuf_list, buf);
 }
