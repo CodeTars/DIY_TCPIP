@@ -198,3 +198,24 @@ net_err_t pktbuf_remove_header(pktbuf_t *buf, int size) {
     display_check_buf(buf);
     return NET_ERR_OK;
 }
+
+net_err_t pktbuf_resize(pktbuf_t *buf, int to_size) {
+    if (to_size == buf->total_size) {
+        return NET_ERR_OK;
+    } else if (to_size > buf->total_size) {
+        int inc_size = to_size - buf->total_size;
+        pktblk_t *block = pktbuf_last_blk(buf);
+        int remain_size = cur_blk_tail_free(block);
+        if (inc_size <= remain_size) {
+            block->size += inc_size;
+            buf->total_size += inc_size;
+            return NET_ERR_OK;
+        } else {
+            block->size += remain_size;
+            buf->total_size += remain_size;
+            inc_size -= remain_size;
+            net_err_t err = pktblock_alloc_list(buf, inc_size, 0);
+            return err;
+        }
+    }
+}

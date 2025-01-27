@@ -24,10 +24,16 @@ pktbuf_t *pktbuf_alloc(int size);
 void pktbuf_free(pktbuf_t *buf);
 net_err_t pktbuf_add_header(pktbuf_t *buf, int size, int cont);
 net_err_t pktbuf_remove_header(pktbuf_t *buf, int size);
+net_err_t pktbuf_resize(pktbuf_t *buf, int to_size);
 
 static inline pktblk_t *pktbuf_first_blk(pktbuf_t *buf) {
     nlist_node_t *first = nlist_first(&buf->blk_list);
     return nlist_entry(first, pktblk_t, node);
+}
+
+static inline pktblk_t *pktbuf_last_blk(pktbuf_t *buf) {
+    nlist_node_t *last = nlist_last(&buf->blk_list);
+    return nlist_entry(last, pktblk_t, node);
 }
 
 static inline pktblk_t *pktbuf_next_blk(pktblk_t *blk) {
