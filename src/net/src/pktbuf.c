@@ -256,13 +256,8 @@ net_err_t pktbuf_resize(pktbuf_t *buf, int to_size) {
 }
 
 net_err_t pktbuf_join(pktbuf_t *dst, pktbuf_t *src) {
-    pktblk_t *blk;
-    while (blk = pktbuf_first_blk(src)) {
-        nlist_remove_first(&src->blk_list);
-        src->total_size -= blk->size;
-        nlist_insert_last(&dst->blk_list, &blk->node);
-        dst->total_size += blk->size;
-    }
+    nlist_join(&dst->blk_list, &src->blk_list);
+    dst->total_size += src->total_size;
     pktbuf_free(src);
 
     dbg_info(DBG_BUF, "join result:");

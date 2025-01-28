@@ -67,3 +67,18 @@ void nlist_insert_after(nlist_t *list, nlist_node_t *node, nlist_node_t *new_nod
 
     list->count++;
 }
+
+void nlist_join(nlist_t *dst, nlist_t *src) {
+    if (nlist_is_empty(dst)) {
+        dst->first = src->first;
+        dst->last = src->last;
+        dst->count = src->count;
+    } else {
+        dst->last->next = src->first;
+        src->first->pre = dst->last;
+
+        dst->last = src->last;
+        dst->count += src->count;
+    }
+    nlist_init(src);
+}

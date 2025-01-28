@@ -81,4 +81,6 @@ static inline nlist_node_t *nlist_remove_last(nlist_t *list) {
 void nlist_insert_last(nlist_t *list, nlist_node_t *node);
 
 void nlist_insert_after(nlist_t *list, nlist_node_t *node, nlist_node_t *new_node);
+
+void nlist_join(nlist_t *dst, nlist_t *src);
 #endif
