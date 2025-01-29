@@ -184,7 +184,23 @@ void pktbuf_test() {
         exit(-1);
     }
 
-    pktbuf_free(buf);
+    // 数据的复制
+    pktbuf_t *dst = pktbuf_alloc(1024);
+    pktbuf_seek(buf, 200);      // 从200处开始读
+    pktbuf_seek(dst, 600);      // 从600处开始写
+    pktbuf_copy(dst, buf, 222); // 复制122个字节
+
+    // 重新定位到600处开始读
+    memset(read_temp, 0, sizeof(read_temp));
+    pktbuf_seek(dst, 600);
+    pktbuf_read(dst, (uint8_t *)read_temp, 222);   // 读222个字节
+    if (memcmp(temp + 100, read_temp, 222) != 0) { // temp+100，实际定位到200字节偏移处
+        printf("not equal.");
+        exit(-1);
+    }
+
+    pktbuf_free(dst);
+    pktbuf_free(buf); // 可以进去调试，在退出函数前看下所有块是否全部释放完毕
 }
 
 void basic_test() {

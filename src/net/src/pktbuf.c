@@ -9,12 +9,16 @@ static pktblk_t block_buffer[PKTBUF_BLK_CNT];
 static mblock_t pktbuf_list;
 static pktbuf_t pktbuf_buffer[PKTBUF_BUF_CNT];
 
-static int cur_blk_tail_free(pktblk_t *blk) {
+static inline int cur_blk_tail_free(pktblk_t *blk) {
     return (int)((blk->payload + PKTBUF_BLK_SIZE) - (blk->data + blk->size));
 }
 
 static inline int cur_blk_remain(pktbuf_t *buf) {
     return buf->cur_blk ? (buf->cur_blk->data + buf->cur_blk->size - buf->blk_offset) : 0;
+}
+
+static inline int buf_remain(pktbuf_t *buf) {
+    return buf->total_size - buf->pos;
 }
 
 static void pktbuf_pos_move_forward(pktbuf_t *buf, int size) {
@@ -408,6 +412,26 @@ net_err_t pktbuf_seek(pktbuf_t *buf, int offset) {
 
         move_bytes -= cur_move;
         pktbuf_pos_move_forward(buf, cur_move);
+    }
+
+    return NET_ERR_OK;
+}
+
+net_err_t pktbuf_copy(pktbuf_t *dst, pktbuf_t *src, int size) {
+    if (size < 0 || size > buf_remain(dst) || size > buf_remain(src)) {
+        dbg_error(DBG_BUF, "size error");
+        return NET_ERR_SIZE;
+    }
+
+    while (size) {
+        int dst_blk_remain_bytes = cur_blk_remain(dst);
+        int src_blk_remain_bytes = cur_blk_remain(src);
+        int copy_bytes = min(size, min(dst_blk_remain_bytes, src_blk_remain_bytes));
+
+        memcpy(dst->blk_offset, src->blk_offset, copy_bytes);
+        size -= copy_bytes;
+        pktbuf_pos_move_forward(dst, copy_bytes);
+        pktbuf_pos_move_forward(src, copy_bytes);
     }
 
     return NET_ERR_OK;
