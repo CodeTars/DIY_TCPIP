@@ -137,6 +137,36 @@ void pktbuf_test() {
     pktbuf_set_cont(buf, 128); // 合并成功，簇变短
     pktbuf_set_cont(buf, 135); // 失败，超过128
     pktbuf_free(buf);
+
+    // 准备一些不同大小的包链，方便后面读写测试
+    buf = pktbuf_alloc(32);
+    pktbuf_join(buf, pktbuf_alloc(4));
+    pktbuf_join(buf, pktbuf_alloc(16));
+    pktbuf_join(buf, pktbuf_alloc(54));
+    pktbuf_join(buf, pktbuf_alloc(32));
+    pktbuf_join(buf, pktbuf_alloc(38));
+    pktbuf_join(buf, pktbuf_alloc(512));
+
+    static uint16_t temp[1000];
+    static uint16_t read_temp[1000];
+
+    // 初始化数据空间
+    for (int i = 0; i < 1024; i++) {
+        temp[i] = i;
+    }
+    // 读写测试。写超过1包的数据，然后读取
+    pktbuf_reset_acc(buf);
+    pktbuf_write(buf, (uint8_t *)temp, pktbuf_total(buf)); // 16位的读写
+    memset(read_temp, 0, sizeof(read_temp));
+    pktbuf_reset_acc(buf);
+    pktbuf_read(buf, (uint8_t *)read_temp, pktbuf_total(buf));
+    if (memcmp(temp, read_temp, pktbuf_total(buf)) != 0) {
+        pktbuf_free(buf);
+        printf("not equal.");
+        exit(-1);
+    }
+
+    pktbuf_free(buf);
 }
 
 void basic_test() {

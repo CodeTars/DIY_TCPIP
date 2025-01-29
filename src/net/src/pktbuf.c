@@ -13,6 +13,24 @@ static int cur_blk_tail_free(pktblk_t *blk) {
     return (int)((blk->payload + PKTBUF_BLK_SIZE) - (blk->data + blk->size));
 }
 
+static inline int cur_blk_remain(pktbuf_t *buf) {
+    return buf->cur_blk ? (buf->cur_blk->data + buf->cur_blk->size - buf->blk_offset) : 0;
+}
+
+static void pktbuf_pos_move_forward(pktbuf_t *buf, int size) {
+    dbg_assert(buf->pos + size <= buf->total_size, "size error");
+
+    buf->pos += size;
+    buf->blk_offset += size;
+
+    pktblk_t *cur = buf->cur_blk;
+    dbg_assert(buf->blk_offset <= cur->data + cur->size, "size error");
+    if (buf->blk_offset == cur->data + cur->size) {
+        buf->cur_blk = pktbuf_next_blk(cur);
+        buf->blk_offset = buf->cur_blk ? buf->cur_blk->data : (uint8_t *)0;
+    }
+}
+
 #if DBG_DISP_ENABLED(DBG_LEVEL_INFO)
 static void display_check_buf(pktbuf_t *buf) {
     if (!buf) {
@@ -128,6 +146,8 @@ pktbuf_t *pktbuf_alloc(int size) {
         pktbuf_free(buf);
         return (pktbuf_t *)0;
     }
+
+    pktbuf_reset_acc(buf);
 
     dbg_assert(buf->total_size == size, "wrong total size");
     display_check_buf(buf);
@@ -310,4 +330,59 @@ net_err_t pktbuf_set_cont(pktbuf_t *buf, int size) {
 
     display_check_buf(buf);
     return NET_ERR_OK;
+}
+
+void pktbuf_reset_acc(pktbuf_t *buf) {
+    if (buf) {
+        buf->pos = 0;
+        buf->cur_blk = pktbuf_first_blk(buf);
+        buf->blk_offset = buf->cur_blk ? buf->cur_blk->data : (uint8_t *)0;
+    }
+}
+
+net_err_t pktbuf_write(pktbuf_t *buf, uint8_t *src, int size) {
+    if (!src || !size) {
+        return NET_ERR_PARAM;
+    }
+
+    if (buf->total_size - buf->pos < size) {
+        dbg_error(DBG_BUF, "size error, %d < %d", buf->total_size - buf->pos, size);
+        return NET_ERR_SIZE;
+    }
+
+    while (size) {
+        int cur_blk_remain_size = cur_blk_remain(buf);
+        int write_size = min(size, cur_blk_remain_size);
+
+        memcpy(buf->blk_offset, src, write_size);
+        src += write_size;
+        size -= write_size;
+
+        pktbuf_pos_move_forward(buf, write_size);
+    }
+
+    return NET_ERR_OK;
+}
+
+net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *dst, int size) {
+    if (!dst || !size) {
+        return NET_ERR_OK;
+    }
+
+    int buf_remain_size = buf->total_size - buf->pos;
+    if (buf_remain_size < size) {
+        dbg_error(DBG_BUF, "size error, %d < %d", buf_remain_size, size);
+        return NET_ERR_SIZE;
+    }
+
+    while (size) {
+        int cur_blk_remain_size = cur_blk_remain(buf);
+        int read_size = min(size, cur_blk_remain_size);
+
+        memcpy(dst, buf->blk_offset, read_size);
+        dst += read_size;
+        size -= read_size;
+
+        pktbuf_pos_move_forward(buf, read_size);
+    }
 }

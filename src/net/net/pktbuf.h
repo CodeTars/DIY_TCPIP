@@ -17,6 +17,10 @@ typedef struct _pktbuf_t {
     nlist_node_t node;
     int total_size;
     nlist_t blk_list;
+
+    int pos;
+    pktblk_t *cur_blk;
+    uint8_t *blk_offset;
 } pktbuf_t;
 
 net_err_t pktbuf_init(void);
@@ -27,6 +31,9 @@ net_err_t pktbuf_remove_header(pktbuf_t *buf, int size);
 net_err_t pktbuf_resize(pktbuf_t *buf, int to_size);
 net_err_t pktbuf_join(pktbuf_t *dst, pktbuf_t *src);
 net_err_t pktbuf_set_cont(pktbuf_t *buf, int size);
+void pktbuf_reset_acc(pktbuf_t *buf);
+net_err_t pktbuf_write(pktbuf_t *buf, uint8_t *src, int size);
+net_err_t pktbuf_read(pktbuf_t *read, uint8_t *dst, int size);
 
 static inline pktblk_t *pktbuf_first_blk(pktbuf_t *buf) {
     nlist_node_t *first = nlist_first(&buf->blk_list);
@@ -41,6 +48,10 @@ static inline pktblk_t *pktbuf_last_blk(pktbuf_t *buf) {
 static inline pktblk_t *pktbuf_next_blk(pktblk_t *blk) {
     nlist_node_t *next = nlist_node_next(&blk->node);
     return nlist_entry(next, pktblk_t, node);
+}
+
+static inline int pktbuf_total(pktbuf_t *buf) {
+    return buf->total_size;
 }
 
 #endif
