@@ -264,3 +264,50 @@ net_err_t pktbuf_join(pktbuf_t *dst, pktbuf_t *src) {
     display_check_buf(dst);
     return NET_ERR_OK;
 }
+
+net_err_t pktbuf_set_cont(pktbuf_t *buf, int size) {
+    if (size > buf->total_size) {
+        dbg_error(DBG_BUF, "to big size (%d) > buf's total size (%d)", size, buf->total_size);
+        return NET_ERR_SIZE;
+    }
+    if (size > PKTBUF_BLK_SIZE) {
+        dbg_error(DBG_BUF, "to big size (%d) > PKTBUF_BLK_SIZE (%d)", size, PKTBUF_BLK_SIZE);
+        return NET_ERR_SIZE;
+    }
+
+    pktblk_t *first_blk = pktbuf_first_blk(buf);
+    if (size <= first_blk->size) {
+        display_check_buf(buf);
+        return NET_ERR_OK;
+    }
+
+    uint8_t *dst = first_blk->payload;
+    for (int i = 0; i < first_blk->size; i++) {
+        *dst++ = first_blk->data[i];
+    }
+    first_blk->data = first_blk->payload;
+
+    pktblk_t *blk = pktbuf_next_blk(first_blk);
+    int remain_size = size - first_blk->size;
+    while (remain_size) {
+        int cur_size = min(remain_size, blk->size);
+        memcpy(dst, blk->data, cur_size);
+
+        blk->data += cur_size;
+        blk->size -= cur_size;
+
+        dst += cur_size;
+        first_blk->size += cur_size;
+        remain_size -= cur_size;
+
+        if (blk->size == 0) {
+            pktblk_t *next_blk = pktbuf_next_blk(blk);
+            nlist_remove(&buf->blk_list, &blk->node);
+            mblock_free(&block_list, blk);
+            blk = next_blk;
+        }
+    }
+
+    display_check_buf(buf);
+    return NET_ERR_OK;
+}

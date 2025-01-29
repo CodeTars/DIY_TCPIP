@@ -122,6 +122,21 @@ void pktbuf_test() {
     pktbuf_t *sbuf = pktbuf_alloc(892);
     pktbuf_join(buf, sbuf);
     pktbuf_free(buf);
+
+    // 小包的连接测试并调整连续性.先合并一些小的包，以形成很多个小包的连接
+    // 然后再调整连续性，可以使链的连接在不断变短
+    buf = pktbuf_alloc(32);
+    pktbuf_join(buf, pktbuf_alloc(4));
+    pktbuf_join(buf, pktbuf_alloc(16));
+    pktbuf_join(buf, pktbuf_alloc(54));
+    pktbuf_join(buf, pktbuf_alloc(32));
+    pktbuf_join(buf, pktbuf_alloc(38));
+    pktbuf_set_cont(buf, 44);  // 合并成功，簇变短
+    pktbuf_set_cont(buf, 60);  // 合并成功，簇变短
+    pktbuf_set_cont(buf, 64);  // 合并成功，簇变短
+    pktbuf_set_cont(buf, 128); // 合并成功，簇变短
+    pktbuf_set_cont(buf, 135); // 失败，超过128
+    pktbuf_free(buf);
 }
 
 void basic_test() {
