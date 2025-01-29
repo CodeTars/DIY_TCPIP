@@ -198,8 +198,14 @@ void pktbuf_test() {
         printf("not equal.");
         exit(-1);
     }
-
     pktbuf_free(dst);
+
+    pktbuf_reset_acc(buf);
+    pktbuf_fill(buf, 53, pktbuf_total(buf));
+    pktbuf_reset_acc(buf);
+    memset(read_temp, 0, sizeof(read_temp));
+    pktbuf_read(buf, (uint8_t *)read_temp, pktbuf_total(buf));
+
     pktbuf_free(buf); // 可以进去调试，在退出函数前看下所有块是否全部释放完毕
 }
 

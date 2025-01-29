@@ -391,6 +391,30 @@ net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *dst, int size) {
     }
 }
 
+net_err_t pktbuf_fill(pktbuf_t *buf, uint8_t v, int size) {
+    if (!size) {
+        return NET_ERR_OK;
+    }
+
+    int buf_remain_size = buf_remain(buf);
+    if (buf_remain_size < size) {
+        dbg_error(DBG_BUF, "size error, %d < %d", buf_remain_size, size);
+        return NET_ERR_SIZE;
+    }
+
+    while (size) {
+        int cur_blk_remain_size = cur_blk_remain(buf);
+        int fill_bytes = min(size, cur_blk_remain_size);
+
+        memset(buf->blk_offset, v, fill_bytes);
+
+        size -= fill_bytes;
+        pktbuf_pos_move_forward(buf, fill_bytes);
+    }
+
+    return NET_ERR_OK;
+}
+
 net_err_t pktbuf_seek(pktbuf_t *buf, int offset) {
     if (offset == buf->pos) {
         return NET_ERR_OK;
