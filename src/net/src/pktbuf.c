@@ -386,3 +386,29 @@ net_err_t pktbuf_read(pktbuf_t *buf, uint8_t *dst, int size) {
         pktbuf_pos_move_forward(buf, read_size);
     }
 }
+
+net_err_t pktbuf_seek(pktbuf_t *buf, int offset) {
+    if (offset == buf->pos) {
+        return NET_ERR_OK;
+    }
+
+    if (offset < 0 || offset >= buf->total_size) {
+        dbg_error(DBG_BUF, "wrong position");
+        return NET_ERR_SIZE;
+    }
+
+    if (offset < buf->pos) {
+        pktbuf_reset_acc(buf);
+    }
+
+    int move_bytes = offset - buf->pos;
+    while (move_bytes) {
+        int blk_remain_bytes = cur_blk_remain(buf);
+        int cur_move = min(blk_remain_bytes, move_bytes);
+
+        move_bytes -= cur_move;
+        pktbuf_pos_move_forward(buf, cur_move);
+    }
+
+    return NET_ERR_OK;
+}

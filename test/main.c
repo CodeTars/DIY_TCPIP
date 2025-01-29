@@ -166,6 +166,24 @@ void pktbuf_test() {
         exit(-1);
     }
 
+    // 定位读写，不超过1个块
+    memset(read_temp, 0, sizeof(read_temp));
+    pktbuf_seek(buf, 18 * 2);
+    pktbuf_read(buf, (uint8_t *)read_temp, 56);
+    if (memcmp(temp + 18, read_temp, 56) != 0) {
+        printf("not equal.");
+        exit(-1);
+    }
+
+    // 定位跨一个块的读写测试, 从170开始读，读56
+    memset(read_temp, 0, sizeof(read_temp));
+    pktbuf_seek(buf, 85 * 2);
+    pktbuf_read(buf, (uint8_t *)read_temp, 256);
+    if (memcmp(temp + 85, read_temp, 256) != 0) {
+        printf("not equal.");
+        exit(-1);
+    }
+
     pktbuf_free(buf);
 }
 

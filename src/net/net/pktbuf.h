@@ -34,6 +34,7 @@ net_err_t pktbuf_set_cont(pktbuf_t *buf, int size);
 void pktbuf_reset_acc(pktbuf_t *buf);
 net_err_t pktbuf_write(pktbuf_t *buf, uint8_t *src, int size);
 net_err_t pktbuf_read(pktbuf_t *read, uint8_t *dst, int size);
+net_err_t pktbuf_seek(pktbuf_t *buf, int offset);
 
 static inline pktblk_t *pktbuf_first_blk(pktbuf_t *buf) {
     nlist_node_t *first = nlist_first(&buf->blk_list);
