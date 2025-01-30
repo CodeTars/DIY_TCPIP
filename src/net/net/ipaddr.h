@@ -1,5 +1,6 @@
 #ifndef IPADDR_H
 #define IPADDR_H
+#include <stdint.h>
 
 #define IPV4_ADDR_SIZE 4
 

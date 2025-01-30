@@ -3,6 +3,7 @@
 #include "net_cfg.h"
 #include "ipaddr.h"
 #include "fixq.h"
+#include "nlist.h"
 
 typedef struct _netif_hwaddr_t {
     uint8_t len;
@@ -43,5 +44,7 @@ typedef struct _netif_t {
     void *out_q_buf[NETIF_OUTQ_SIZE];
 
 } netif_t;
+
+net_err_t netif_init(void);
 
 #endif
