@@ -8,6 +8,7 @@
 #include "nlist.h"
 #include "mblock.h"
 #include "pktbuf.h"
+#include "netif.h"
 
 static sys_sem_t sem;
 static int count = 0;
