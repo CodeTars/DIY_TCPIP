@@ -57,5 +57,7 @@ typedef struct _netif_t {
 
 net_err_t netif_init(void);
 netif_t *netif_open(const char *dev_name, const netif_ops_t *driver, void *driver_data);
+net_err_t netif_set_addr(netif_t *netif, ipaddr_t *ip, ipaddr_t *netmask, ipaddr_t *gateway);
+net_err_t netif_set_hwaddr(netif_t *netif, const uint8_t *hwaddr, int len);
 
 #endif

@@ -32,3 +32,20 @@ net_err_t ipaddr_from_str(ipaddr_t *dst, const char *src) {
     }
     return NET_ERR_OK;
 }
+
+ipaddr_t *ipaddr_get_any(void) {
+    static ipaddr_t ipaddr_any = {
+        .type = IPADDR_V4,
+        .q_addr = 0,
+    };
+    return &ipaddr_any;
+}
+
+void ipaddr_copy(ipaddr_t *dst, ipaddr_t *src) {
+    if (!dst || !src) {
+        return;
+    }
+
+    dst->type = src->type;
+    dst->q_addr = src->type;
+}
